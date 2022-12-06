@@ -3,11 +3,16 @@ library(stringr)
 library(dplyr)
 library(stringr)
 library(tabulizer)
-library(tidyverse)
 
 options(stringsAsFactors = FALSE)
 
+#save the pdf file to be scraped
 forfeiture <- "Forfeiture_Set_Aside_10-1-2020_to_9-22-2022.pdf"
+
+#for each locate_areas call, highlight the area where on the page where the data for each column is expected 
+  #and save that boundary into a variable
+#this requires that each column's data is an a consistent area from page to page
+#in this example, there are 10 columns we are trying to capture, so there are 10 calls to the locate_area function
 
 name_areas <- locate_areas(file = forfeiture , pages=1)
 spn_areas <- locate_areas(file = forfeiture, pages=1)
@@ -21,11 +26,17 @@ bond_type_areas <- locate_areas(file = forfeiture, pages=1)
 cash_bond_areas <- locate_areas(file = forfeiture, pages=1)
 
 ###############################
+# This is the primary function that will scrape each page
+# It takes a single page number as an input
+# The output is a dataframe with 10 columns, with the number of rows dependent on the page
+###############################
 
 bond_disp <- function(pg) {
   
+  #create an empty dataframe for the 11 columns (10 specified above, and an 11th column for the page number we're pulling from)
   bond_disposition <- data.frame(matrix(ncol = 11, nrow = 0))
   
+  #the extract_tables function uses the areas defined above to return the data within the area into a table
   name <- extract_tables(file = forfeiture, pages=pg, guess=FALSE, area = name_areas)
   spn <- extract_tables(file = forfeiture, pages=pg, guess=FALSE, area = spn_areas)
   case <- extract_tables(file = forfeiture, pages=pg, guess=FALSE, area = case_num_areas)
@@ -37,22 +48,32 @@ bond_disp <- function(pg) {
   bond_type <- extract_tables(file = forfeiture, pages=pg, guess=FALSE, area = bond_type_areas)
   cash_bond_applied <- extract_tables(file = forfeiture, pages=pg, guess=FALSE, area = cash_bond_areas)
   
-  # NAME #
+  ### NAME ###
   
-  name <- data.frame(name, stringsAsFactors = FALSE)
+  #save the extracted table as a dataframe and name the first column "A"
+  name <- data.frame(name)
   colnames(name) <- "A"
+  
+  #create a list of row index values where the word "Name" shows up
+  #the length of this list is the number of rows we will need to scrape for each page
   name_ls <- which(name$A== "Name")
   
+  #create an empty dataframe with one column for Name
   nl <- data.frame(matrix(ncol = 1, nrow = 0))
   
+  #for each of the row index values in name_ls, return the text from the row index directly below, 
+    #add it to our empty dataframe, and name the column as "name"
   for (i in 1:length(name_ls)){
     n <- name$A[name_ls[i]+1]
     nl <- rbind(nl, n)
     colnames(nl) <- c('name')
   }
   
-  # SPN #
+  #we will repeat the same logic for all 10 columns below
   
+  ## SPN ##
+  
+  #see same logic for Name column above
   spn <- data.frame(spn, stringsAsFactors = FALSE)
   colnames(spn) <- "A"
   spn_ls <- which(spn$A== "SPN")
@@ -65,8 +86,9 @@ bond_disp <- function(pg) {
     colnames(sl) <- c('spn')
   }
   
-  # CASE NUMBER #
+  ### CASE NUMBER ###
   
+  #see same logic for Name column above
   case <- data.frame(case, stringsAsFactors = FALSE)
   colnames(case) <- "A"
   case_ls <- which(case$A== "Case #")
@@ -79,8 +101,9 @@ bond_disp <- function(pg) {
     colnames(cl) <- c('case_num')
   }
   
-  # CHARGE LITERAL  #
+  ### CHARGE LITERAL  ###
   
+  #see same logic for Name column above
   charge <- data.frame(charge, stringsAsFactors = FALSE)
   colnames(charge) <- "A"
   charge_ls <- which(charge$A== "Charge Literal")
@@ -93,8 +116,9 @@ bond_disp <- function(pg) {
     colnames(chl) <- c('charge')
   }
   
-  # DISPOSITION DATE #
+  ### DISPOSITION DATE ###
   
+  #see same logic for Name column above
   disp_date <- data.frame(disp_date, stringsAsFactors = FALSE)
   colnames(disp_date) <- "A"
   disp_date_ls <- which(disp_date$A== "Date")
@@ -107,8 +131,9 @@ bond_disp <- function(pg) {
     colnames(dispdtl) <- c('disposition_date')
   }
   
-  #DISPOSITION CODE #
+  ### DISPOSITION CODE ###
   
+  #see same logic for Name column above
   disp_code <- data.frame(disp_code, stringsAsFactors = FALSE)
   colnames(disp_code) <- "A"
   disp_code_ls <- which(disp_code$A== "Code")
@@ -121,8 +146,9 @@ bond_disp <- function(pg) {
     colnames(dispcodel) <- c('disposition_code')
   }
   
-  # BOND DATE #
+  ### BOND DATE ###
   
+  #see same logic for Name column above
   bond_date <- data.frame(bond_date, stringsAsFactors = FALSE)
   colnames(bond_date) <- "A"
   bond_date_ls <- which(bond_date$A== "Bond Date")
@@ -135,8 +161,9 @@ bond_disp <- function(pg) {
     colnames(bonddtl) <- c('bond_date')
   }
   
-  # BOND NUMBER #
+  ### BOND NUMBER ###
   
+  #see same logic for Name column above
   bond_num <- data.frame(bond_num, stringsAsFactors = FALSE)
   colnames(bond_num) <- "A"
   bond_num_ls <- which(bond_num$A== "Bond Number")
@@ -149,8 +176,9 @@ bond_disp <- function(pg) {
     colnames(bondnuml) <- c('bond_num')
   }
   
-  # BOND TYPE #
+  ### BOND TYPE ###
   
+  #see same logic for Name column above
   bond_type <- data.frame(bond_type, stringsAsFactors = FALSE)
   colnames(bond_type) <- "A"
   bond_type_ls <- which(bond_type$A== "Type")
@@ -163,8 +191,9 @@ bond_disp <- function(pg) {
     colnames(bondtypel) <- c('bond_type')
   }
   
-  # CASH BOND APPLIED #
+  ### CASH BOND APPLIED ###
   
+  #see same logic for Name column above
   cash_bond_applied <- data.frame(cash_bond_applied, stringsAsFactors = FALSE)
   colnames(cash_bond_applied) <- "A"
   cba_ls <- which(cash_bond_applied $A== "Appl'd to Fine")
@@ -177,23 +206,26 @@ bond_disp <- function(pg) {
     colnames(cbal) <- c('cash_bond_applied_to_fine')
   }
   
-  ## Combine all fields together ##
+  ### Combine all fields together ###
   
   return(cbind(nl, sl, cl, chl, dispdtl, dispcodel, bonddtl, bondnuml, bondtypel, cbal))
 }
 
+#set n as the number of pages from the pdf we want to scrape
+#create a vector of lists with length of n
 n = 81
 datalist = list()
 datalist = vector("list", length = n)
 
+#for each page 1 through n, call the bond_disp function (our primary scraping function) for each page
 for (i in 1:n) {
   dat <- bond_disp(i)
-  dat$i <- i  # maybe you want to keep track of which iteration produced it?
-  datalist[[i]] <- dat # add it to your list
+  dat$i <- i  #create a new column for the page number of the pdf that is being scraped
+  datalist[[i]] <- dat #add each page output to the datalist vector
 }
 
-bond_disposition_full_1_81= do.call(rbind, datalist)
+#combine all of the pages into one unified dataframe
+bond_disposition_full_1_81 = do.call(rbind, datalist)
 
-View(bond_disposition_full_1_81)
-
+#save the unified datafame as a csv, if necessary
 write.csv(bond_disposition_full_1_81,"forfeiture_bond_disposition.csv", row.names=FALSE)
